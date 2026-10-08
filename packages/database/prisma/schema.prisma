@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  SUCCESSFUL
+  FAILED
+  CANCELLED
+}
+
+enum ContributionStatus {
+  PENDING
+  CONFIRMED
+  REFUNDED
+  FAILED
+}
+
+enum TransactionType {
+  CAMPAIGN_CREATED
+  CONTRIBUTION
+  WITHDRAWAL
+  REFUND
+}
+
+model User {
+  id        String   @id @default(cuid())
+  wallet    String   @unique
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaigns    Campaign[]
+  contributions Contribution[]
+  transactions Transaction[]
+
+  @@index([wallet])
+}
+
+model Campaign {
+  id                String         @id @default(cuid())
+  creatorId         String
+  title             String
+  description       String
+  imageUrl          String?
+  contractCampaignId String?
+  goalAmount        Decimal        @db.Decimal(36, 18)
+  raisedAmount      Decimal        @default(0) @db.Decimal(36, 18)
+  deadline          DateTime
+  status            CampaignStatus @default(DRAFT)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  creator       User           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  contributions Contribution[]
+  transactions  Transaction[]
+
+  @@index([creatorId])
+  @@index([status])
+  @@index([deadline])
+}
+
+model Contribution {
+  id           String             @id @default(cuid())
+  campaignId   String
+  contributorId String
+  amount       Decimal            @db.Decimal(36, 18)
+  txHash       String             @unique
+  status       ContributionStatus @default(PENDING)
+  blockNumber  BigInt?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contributor User      @relation(fields: [contributorId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([contributorId])
+  @@index([status])
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  userId      String
+  campaignId  String?
+  txHash      String          @unique
+  type        TransactionType
+  amount      Decimal?        @db.Decimal(36, 18)
+  blockNumber BigInt?
+  createdAt   DateTime        @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([campaignId])
+  @@index([type])
+}
+
+model BlockchainEvent {
+  id          String   @id @default(cuid())
+  eventName   String
+  txHash      String
+  blockNumber BigInt
+  logIndex    Int
+  payload     Json
+  processed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([txHash, logIndex])
+  @@index([eventName])
+  @@index([blockNumber])
+  @@index([processed])
+}
