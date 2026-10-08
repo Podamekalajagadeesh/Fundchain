@@ -167,14 +167,25 @@ export async function syncContributionReceived(event) {
         },
       });
 
+      const contributionAmount = ethers.formatEther(amount);
+
+      const newRaisedAmount =
+        Number(campaign.raisedAmount) + Number(contributionAmount);
+
+      const newStatus =
+        newRaisedAmount >= Number(campaign.goalAmount)
+          ? "SUCCESSFUL"
+          : campaign.status;
+
       await tx.campaign.update({
         where: {
           id: campaign.id,
         },
         data: {
           raisedAmount: {
-            increment: ethers.formatEther(amount),
+            increment: contributionAmount,
           },
+          status: newStatus,
         },
       });
 

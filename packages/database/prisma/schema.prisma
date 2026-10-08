@@ -35,10 +35,12 @@ enum TransactionType {
 
 model User {
   id        String   @id @default(cuid())
-  wallet    String   @unique
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  wallet           String    @unique
+  role             UserRole  @default(USER)
+  authNonce        String?
+  authNonceExpires DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   campaigns    Campaign[]
   contributions Contribution[]

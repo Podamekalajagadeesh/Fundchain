@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
 import blockchainRouter from "./routes/blockchain.js";
+import authRouter from "./routes/auth.js";
+import campaignsRouter from "./routes/campaigns.js";
 import { startBlockchainSync } from "./blockchain/sync.js";
 
 dotenv.config();
@@ -17,6 +19,8 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 app.use("/api/blockchain", blockchainRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/campaigns", campaignsRouter);
 
 app.get("/health", (req, res) => {
   res.json({
